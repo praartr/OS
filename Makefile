@@ -1,4 +1,4 @@
-obj-m += kyouko3.o
+obj-m += kyouko3
 
 default:
 	-mknod /dev/kyouko3 c $$major 500 $$minor 127
