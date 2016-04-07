@@ -1,0 +1,37 @@
+SYSCALL_DEFINE2(smunch, pid_t,pid, long, bit_pattern){
+//Check if multi threaded
+
+struct task_struct *p;
+  bool ret;
+  p = pid_task(find_vpid(pid), PIDTYPE_PID);
+  if(!p){
+    pr_alert("\nprocess table is null");
+    return -1;
+  }
+  ret = current_is_single_threaded();
+  if(ret == false){
+    pr_alert("\nError : Multithreaded process, cannot proceed\n");
+    return -1;
+  }
+ 
+//Check if traced
+  if(p->ptrace & PT_PTRACED){
+    pr_alert("\nError : Traced process, cannot proceed\n");
+    return -1;
+  }
+ 
+//Check if zombie state
+  if(p->exit_state == EXIT_ZOMBIE){
+    if((1 << (SIGKILL-1)) & bit_pattern){
+      release_task(p);
+    }
+    return 0;
+  }
+// If other state, then load the bit and wake up the process
+  else{
+    p->pending.signal.sig[0] |= bit_pattern;
+    wake_up_process(p);
+  }
+return 0;
+}
+ 
